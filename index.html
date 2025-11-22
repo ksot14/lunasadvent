@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Advent Calendar</title>
+  <meta name="description" content="A festive, mobile-friendly advent calendar with 24 unlockable doors." />
+  <style>
+    :root {
+      --bg: #f4f0e6;            /* soft warm beige */
+      --bg-deep: #dcd4c7;       /* gentle warm background */
+      --card: #faf6ef;          /* natural parchment */
+      --text: #2f2925;          /* soft charcoal */
+      --green: #3f5f4a;         /* muted forest green */
+      --green-soft: #6a826b;    /* sage pine */
+      --red: #8b4a4a;           /* muted cranberry */
+      --gold: #c0a46b;          /* warm muted gold */
+      --gold-soft: #ddc899;     /* lighter natural gold */
+      --frost: #e3d8c7;         /* soft frost beige */
+      --shadow: 0 8px 22px rgba(0,0,0,.12);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background:
+        radial-gradient(1100px 700px at 0% 0%, rgba(63,95,74,0.16), transparent 60%),
+        radial-gradient(1000px 650px at 100% 100%, rgba(139,74,74,0.16), transparent 60%),
+        radial-gradient(900px 600px at 50% -10%, rgba(192,168,120,0.18), transparent 60%),
+        var(--bg-deep);
+      color: var(--text);
+      line-height: 1.55;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100dvh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Soft falling snow using pseudo elements */
+    body::before,
+    body::after {
+      content: "";
+      pointer-events: none;
+      position: fixed;
+      inset: -200px;
+      background-image:
+        radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,.8), transparent),
+        radial-gradient(2px 2px at 30% 80%, rgba(255,255,255,.7), transparent),
+        radial-gradient(3px 3px at 70% 10%, rgba(255,255,255,.85), transparent),
+        radial-gradient(2px 2px at 90% 50%, rgba(255,255,255,.6), transparent);
+      opacity: .25;
+      z-index: -1;
+      animation: drift 55s linear infinite;
+    }
+    body::after {
+      animation-duration: 85s;
+      opacity: .18;
+      filter: blur(1px);
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(0, -60px, 0); }
+      to   { transform: translate3d(0, 60px, 0); }
+    }
+
+    header {
+      padding: 18px clamp(16px, 5vw, 40px) 6px;
+      text-align: center;
+      color: #453c33;
+      position: relative;
+    }
+
+    .title {
+      font-size: clamp(28px, 6vw, 40px);
+      margin: 0 0 4px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: #6c5d52;
+    }
+
+    /* Garland / lights bar */
+    .garland {
+      margin-top: 12px;
+      height: 26px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      pointer-events: none;
+    }
+    .garland::before {
+      content: "";
+      position: absolute;
+      top: 7px;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: radial-gradient(circle at 0 50%, var(--gold-soft), transparent 60%),
+                  linear-gradient(to right, rgba(0,0,0,.1), rgba(0,0,0,.05), rgba(0,0,0,.1));
+      border-radius: 999px;
+    }
+    .light {
+      width: 10px;
+      height: 16px;
+      border-radius: 6px 6px 14px 14px;
+      background: #f2d6c2;
+      box-shadow: 0 0 8px rgba(242,214,194,.8);
+      transform-origin: top center;
+      animation: sway 2.2s ease-in-out infinite alternate;
+    }
+    .light:nth-child(2) { background:#f2e2bf; box-shadow:0 0 8px rgba(242,226,191,.8); animation-duration:2.8s; }
+    .light:nth-child(3) { background:#d4e5ce; box-shadow:0 0 8px rgba(212,229,206,.8); animation-duration:2.4s; }
+    .light:nth-child(4) { background:#f2d6c2; animation-duration:3s; }
+    .light:nth-child(5) { background:#f2e2bf; animation-duration:2.6s; }
+
+    @keyframes sway {
+      from { transform: translateY(0) rotate(-4deg); }
+      to   { transform: translateY(1px) rotate(3deg); }
+    }
+
+    .calendar-shell {
+      width: min(1100px, 100% - 24px);
+      margin: 10px auto 28px;
+      border-radius: 22px;
+      padding: 14px clamp(12px, 3vw, 20px) 20px;
+      background: linear-gradient(135deg, rgba(250,246,239,.9), rgba(250,246,239,.96));
+      box-shadow: 0 18px 40px rgba(0,0,0,.12);
+      border: 1px solid rgba(255,255,255,.7);
+    }
+
+    .calendar-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 4px 10px;
+      color: #4c4338;
+      font-size: 13px;
+    }
+    .pill {
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid rgba(0,0,0,.06);
+      background: linear-gradient(135deg, rgba(255,255,255,.9), rgba(255,255,255,.6));
+    }
+
+    .grid {
+      margin-top: 6px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(10px, 2.5vw, 18px);
+    }
+    @media (min-width: 520px) {
+      .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (min-width: 820px) {
+      .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    .door {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      background:
+        linear-gradient(140deg, rgba(255,255,255,.85), rgba(250,246,239,.95)),
+        radial-gradient(120% 160% at 0% 0%, rgba(192,164,120,.16), transparent 60%),
+        radial-gradient(160% 140% at 100% 100%, rgba(63,95,74,.16), transparent 55%),
+        #faf6ef;
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: var(--shadow);
+      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    }
+
+    .door::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      width: 10px;
+      height: 10px;
+      background:
+        radial-gradient(circle at 50% 50%, #fff 0, #fff 35%, transparent 40%),
+        radial-gradient(circle at 0 50%, rgba(255,255,255,.7) 0, transparent 55%),
+        radial-gradient(circle at 100% 50%, rgba(255,255,255,.7) 0, transparent 55%);
+      opacity: .7;
+    }
+
+    .door:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(0,0,0,.16);
+      filter: brightness(1.02);
+    }
+
+    .door-btn {
+      appearance: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      width: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      cursor: pointer;
+      text-align: inherit;
+      height: 100%;
+    }
+
+    .door-top {
+      position: relative;
+      min-height: 120px;
+      padding: 14px 10px 10px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    /* 🎅 in the corner */
+    .door-santa {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      font-size: 24px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,.15));
+    }
+
+    .door-number-wrap {
+      position: relative;
+      z-index: 1;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 0 0, #fff 0, #fff 40%, rgba(250,246,239,.95) 80%);
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 6px 14px rgba(0,0,0,.18);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .door-number {
+      font-weight: 800;
+      font-size: clamp(24px, 5vw, 32px);
+      color: var(--green);
+      letter-spacing: .08em;
+    }
+
+    .door-icon {
+      font-size: 18px;
+    }
+
+    .door-label {
+      padding: 10px 12px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-top: 1px dashed rgba(0,0,0,.05);
+      background: linear-gradient(to top, rgba(250,246,239,.95), rgba(250,246,239,.8));
+    }
+
+    .door-status {
+      font-size: 11px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--green-soft);
+      white-space: nowrap;
+    }
+
+    .lock-icon {
+      font-size: 17px;
+    }
+
+    .door.locked .door-top::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(135deg, rgba(255,255,255,.7) 0 12px, rgba(0,0,0,.03) 12px 24px);
+      mix-blend-mode: soft-light;
+      opacity: .75;
+      pointer-events: none;
+    }
+
+    .door.locked .door-number {
+      color: #b08f67;
+    }
+
+    .door.locked .door-number-wrap {
+      background: radial-gradient(circle at 0 0, #fff 0, #fff 40%, #f1e7d7 80%);
+    }
+
+    dialog#viewer {
+      width: min(920px, 95vw);
+      border: none;
+      border-radius: 18px;
+      padding: 0;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,.3);
+      background: #faf6ef;
+    }
+
+    dialog::backdrop {
+      background: rgba(0,0,0,.35);
+    }
+
+    .viewer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, var(--green), #324539);
+      color: #faf6ef;
+    }
+
+    .viewer-title {
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    .viewer-close {
+      appearance: none;
+      border: none;
+      padding: 2px 0 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.15);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s ease, transform .15s ease;
+    }
+
+    .viewer-close:hover {
+      background: rgba(0,0,0,.25);
+      transform: translateY(-1px);
+    }
+
+    .viewer-body {
+      display: grid;
+    }
+
+    .viewer-media {
+      display: block;
+      width: 100%;
+      max-height: min(70vh, 520px);
+      object-fit: cover;
+      background: #000;
+    }
+
+    .viewer-text {
+      padding: 16px 18px 22px;
+      background: linear-gradient(to bottom, #faf6ef, #f3ebdf);
+      font-size: 15px;
+    }
+    .viewer-text p {
+      margin: 0;
+    }
+
+    footer {
+      padding: 18px 16px 26px;
+      text-align: center;
+      font-size: 12px;
+      color: #6c5d52;
+    }
+    .legend {
+      margin-top: 6px;
+      color: #8a7a6c;
+      font-size: 11px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 class="title">Advent Calendar</h1>
+    <p class="subtitle">24 little doors, one very loved girl ✨</p>
+    <div class="garland" aria-hidden="true">
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+    </div>
+  </header>
+
+  <main class="calendar-shell">
+    <div class="calendar-header-bar">
+      <span class="pill">🎄 Unlocks day by day from December 1st</span>
+      <span class="pill">🎁 Some doors hide your favourite dog</span>
+    </div>
+
+    <section class="grid" id="grid" aria-label="Advent calendar doors">
+      <!-- Doors injected by JavaScript -->
+    </section>
+  </main>
+
+  <!-- Modal viewer -->
+  <dialog id="viewer" aria-labelledby="viewer-title">
+    <div class="viewer-header">
+      <div class="viewer-title" id="viewer-title">Day</div>
+      <button class="viewer-close" aria-label="Close" title="Close" type="button">×</button>
+    </div>
+    <div class="viewer-body">
+      <img class="viewer-media" id="viewer-img" alt="" />
+      <div class="viewer-text" id="viewer-text"></div>
+    </div>
+  </dialog>
+
+  <!-- CONTENT TEMPLATES — EDIT THESE -->
+  <template id="door-1">
+    <img src="./images/day01.jpg" alt="Your dog – Day 1" />
+    <p>Day 1: December starts with a boopable nose and a reminder that I&#39;m very, very lucky to have you. 🐾</p>
+  </template>
+  <template id="door-2">
+    <img src="./images/day02.jpg" alt="Your dog – Day 2" />
+    <p>Day 2: Serious face, silly heart. Just like someone else I know…</p>
+  </template>
+  <template id="door-3">
+    <img src="./images/day03.jpg" alt="Your dog – Day 3" />
+    <p>Day 3: Cold nose, warm cuddles, perfect evening.</p>
+  </template>
+  <template id="door-4">
+    <img src="./images/day04.jpg" alt="Your dog – Day 4" />
+    <p>Day 4: This is your daily reminder that you are the favourite human.</p>
+  </template>
+  <template id="door-5">
+    <img src="./images/day05.jpg" alt="Your dog – Day 5" />
+    <p>Day 5: No thoughts, just puppy eyes and love for you.</p>
+  </template>
+  <template id="door-6">
+    <img src="./images/day06.jpg" alt="Your dog – Day 6" />
+    <p>Day 6: We both think you&#39;re the best snack-giver.</p>
+  </template>
+  <template id="door-7">
+    <img src="./images/day07.jpg" alt="Your dog – Day 7" />
+    <p>Day 7: 13/10 good dog, 100/10 amazing girlfriend.</p>
+  </template>
+  <template id="door-8">
+    <img src="./images/day08.jpg" alt="Your dog – Day 8" />
+    <p>Day 8: This paw is reserving a spot on your lap later.</p>
+  </template>
+  <template id="door-9">
+    <img src="./images/day09.jpg" alt="Your dog – Day 9" />
+    <p>Day 9: Tongue out, heart full, thinking of you.</p>
+  </template>
+  <template id="door-10">
+    <img src="./images/day10.jpg" alt="Your dog – Day 10" />
+    <p>Day 10: Sleepy pup, sleepy us, perfect movie night incoming.</p>
+  </template>
+  <template id="door-11">
+    <img src="./images/day11.jpg" alt="Your dog – Day 11" />
+    <p>Day 11: Official festive pupper reporting for snuggle duty.</p>
+  </template>
+  <template id="door-12">
+    <img src="./images/day12.jpg" alt="Your dog – Day 12" />
+    <p>Day 12: Wind in the fur, you in my thoughts.</p>
+  </template>
+  <template id="door-13">
+    <img src="./images/day13.jpg" alt="Your dog – Day 13" />
+    <p>Day 13: Best seat in the house is always next to you.</p>
+  </template>
+  <template id="door-14">
+    <img src="./images/day14.jpg" alt="Your dog – Day 14" />
+    <p>Day 14: Festive zoomies to celebrate making it this far through December.</p>
+  </template>
+  <template id="door-15">
+    <img src="./images/day15.jpg" alt="Your dog – Day 15" />
+    <p>Day 15: Certified blanket burrito, ready to share.</p>
+  </template>
+  <template id="door-16">
+    <img src="./images/day16.jpg" alt="Your dog – Day 16" />
+    <p>Day 16: Sit. Stay. Steal your heart (again).</p>
+  </template>
+  <template id="door-17">
+    <img src="./images/day17.jpg" alt="Your dog – Day 17" />
+    <p>Day 17: Santa called. He said you&#39;re still his favourite.</p>
+  </template>
+  <template id="door-18">
+    <img src="./images/day18.jpg" alt="Your dog – Day 18" />
+    <p>Day 18: Little ray of sunshine on a chilly day.</p>
+  </template>
+  <template id="door-19">
+    <img src="./images/day19.jpg" alt="Your dog – Day 19" />
+    <p>Day 19: Sniffs collected today: many. Thoughts of you: even more.</p>
+  </template>
+  <template id="door-20">
+    <img src="./images/day20.jpg" alt="Your dog – Day 20" />
+    <p>Day 20: Redeem this picture for one extra-long cuddle.</p>
+  </template>
+  <template id="door-21">
+    <img src="./images/day21.jpg" alt="Your dog – Day 21" />
+    <p>Day 21: Long nights, fairy lights, and us.</p>
+  </template>
+  <template id="door-22">
+    <img src="./images/day22.jpg" alt="Your dog – Day 22" />
+    <p>Day 22: Tail-wagging levels: off the charts when you walk in.</p>
+  </template>
+  <template id="door-23">
+    <img src="./images/day23.jpg" alt="Your dog – Day 23" />
+    <p>Day 23: Almost Christmas. Thank you for being my favourite part of the year.</p>
+  </template>
+  <template id="door-24">
+    <img src="./images/day24.jpg" alt="Your dog – Day 24" />
+    <p>Day 24: Merry Christmas Eve, love. From me and one very good dog. 💛</p>
+  </template>
+
+  <footer>
+    Made with love, soft colours and waggy tails.
+    <div class="legend">🔒 Locked until its December date • 🗝️ Opens on/after its day • Add ?dev=1 to the URL to preview all doors</div>
+  </footer>
+
+  <script>
+    (function () {
+      const grid = document.getElementById('grid');
+      const DEV = new URLSearchParams(location.search).get('dev') === '1';
+      const now = new Date();
+      const year = now.getFullYear();
+
+      const festiveIcons = [
+        '⭐', '🎄', '❄️', '🎁', '🕯️', '🦌', '✨', '🍪', '☃️', '💫', '🌟', '🎀',
+        '🎄', '❄️', '🎁', '🕯️', '🦌', '⭐', '🍪', '☃️', '💫', '🎀', '🎄', '🌟'
+      ];
+
+      function isUnlocked(day) {
+        if (DEV) return true;
+        const openDate = new Date(year, 11, day, 0, 0, 0); // December (0-indexed)
+        return now >= openDate;
+      }
+
+      const frag = document.createDocumentFragment();
+
+      for (let day = 1; day <= 24; day++) {
+        const open = isUnlocked(day);
+        const card = document.createElement('article');
+        card.className = 'door' + (open ? '' : ' locked');
+        card.setAttribute('data-day', String(day));
+
+        const btn = document.createElement('button');
+        btn.className = 'door-btn';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', `Open door ${day}`);
+
+        const top = document.createElement('div');
+        top.className = 'door-top';
+
+        const santa = document.createElement('div');
+        santa.className = 'door-santa';
+        santa.textContent = '🎅';
+        top.appendChild(santa);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'door-number-wrap';
+
+        const number = document.createElement('span');
+        number.className = 'door-number';
+        number.textContent = day;
+
+        const icon = document.createElement('span');
+        icon.className = 'door-icon';
+        icon.textContent = festiveIcons[day - 1] || '⭐';
+
+        wrap.appendChild(number);
+        wrap.appendChild(icon);
+        top.appendChild(wrap);
+
+        const label = document.createElement('div');
+        label.className = 'door-label';
+
+        const status = document.createElement('div');
+        status.className = 'door-status';
+        status.textContent = open ? '🗝️ Open door' : `🔒 Opens Dec ${day}`;
+
+        const lock = document.createElement('div');
+        lock.className = 'lock-icon';
+        lock.setAttribute('aria-hidden', 'true');
+        lock.textContent = open ? '🚪' : '🔒';
+
+        label.appendChild(status);
+        label.appendChild(lock);
+
+        btn.appendChild(top);
+        btn.appendChild(label);
+        card.appendChild(btn);
+
+        btn.addEventListener('click', () => {
+          if (!isUnlocked(day)) {
+            card.animate(
+              [
+                { transform: 'translateX(0)' },
+                { transform: 'translateX(-3px)' },
+                { transform: 'translateX(3px)' },
+                { transform: 'translateX(0)' }
+              ],
+              { duration: 220, easing: 'ease-in-out' }
+            );
+            return;
+          }
+          openDoor(day);
+        });
+
+        frag.appendChild(card);
+      }
+
+      grid.appendChild(frag);
+
+      const dialog = document.getElementById('viewer');
+      const imgEl = document.getElementById('viewer-img');
+      const textEl = document.getElementById('viewer-text');
+      const titleEl = document.getElementById('viewer-title');
+      const closeBtn = dialog.querySelector('.viewer-close');
+
+      function openDoor(day) {
+        const tpl = document.getElementById(`door-${day}`);
+        if (!tpl) return;
+        const node = tpl.content.cloneNode(true);
+        const img = node.querySelector('img');
+        const text = node.querySelector('p');
+
+        titleEl.textContent = `Day ${day}`;
+
+        if (img) {
+          imgEl.src = img.getAttribute('src');
+          imgEl.alt = img.getAttribute('alt') || `Day ${day} image`;
+        } else {
+          imgEl.removeAttribute('src');
+          imgEl.alt = '';
+        }
+
+        textEl.innerHTML = '';
+        if (text) textEl.appendChild(text);
+
+        if (typeof dialog.showModal === 'function') {
+          dialog.showModal();
+        } else {
+          dialog.setAttribute('open', '');
+        }
+      }
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          dialog.close();
+        });
+      }
+
+      dialog.addEventListener('click', (e) => {
+        const rect = dialog.getBoundingClientRect();
+        const inside =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
+        if (!inside) dialog.close();
+      });
+    })();
+  </script>
+</body>
+</html>
